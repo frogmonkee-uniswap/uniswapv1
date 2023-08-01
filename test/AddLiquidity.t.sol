@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
@@ -20,6 +20,7 @@ contract AddLiquidty is Test {
 
         exchange = new Exchange(address(token));
     }
+    
     function testAddLiquidity() public {
         vm.prank(userA);
         token.approve(address(exchange), 1000);

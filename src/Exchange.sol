@@ -37,6 +37,21 @@ contract Exchange {
     return (inputAmount * outputReserve) / (inputReserve + inputAmount);
     }
 
+    function ethToTokenSwap(uint _minAmount) public payable {
+        uint256 tokenReserve = getReserve();
+        uint256 tokenBought = getAmount(msg.value, address(this).balance - msg.value, tokenReserve);
+        require(tokenBought >= _minAmount, "Insufficient token output amount");
+        IERC20(tokenAddress).transfer(address(msg.sender), tokenBought);
+    }
+
+    function tokenToEthSwap(uint _tokenSold, uint _minAmount) public {
+        uint256 tokenReserve = getReserve();
+        uint256 ethBought = getAmount(_tokenSold, tokenReserve, address(this).balance);
+        require(ethBought >= _minAmount, "Insufficient eth output amount");
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _tokenSold);
+        payable(msg.sender).transfer(ethBought);        
+    }
+
     function getReserve() public view returns(uint256) {
         return IERC20(tokenAddress).balanceOf(address(this));
     }
