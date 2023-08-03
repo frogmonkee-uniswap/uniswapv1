@@ -38,6 +38,10 @@ contract Exchange is ERC20 {
         }
     }
 
+    function getBalance(address _minter) public view returns(uint256) {
+        return _balances[_minter];
+    }
+
     function removeLiquidity(uint256 _amount) public returns(uint256, uint256) {
         require(_amount > 0, "invalid amount");
 
@@ -57,13 +61,15 @@ contract Exchange is ERC20 {
         uint256 inputAmount,
         uint256 inputReserve,
         uint256 outputReserve
-        ) private pure returns (uint256) {
+        ) public pure returns (uint256) {
         require(inputReserve > 0 && outputReserve > 0, "invalid reserves");
+        // Take 1% as fee
         uint256 inputAmountWithFee = inputAmount * 99;
-        return (inputAmountWithFee * outputReserve) / ((inputReserve * 100) + inputAmount);
+        // Multiply `inputReserve` by 100 since input was multiplied by (100-1)
+        return (inputAmountWithFee * outputReserve) / ((inputReserve + inputAmount) * 100);
         }
 
-        function getTokenAmount(uint256 _etherSold) public view returns(uint256) {
+    function getTokenAmount(uint256 _etherSold) public view returns(uint256) {
         require(_etherSold > 0, "ethSold is too small");
         uint256 tokenReserve = getReserve();
         return getAmount(_etherSold, address(this).balance, tokenReserve);

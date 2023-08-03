@@ -37,11 +37,11 @@ contract AddLiquidty is Test {
 
     function testEthSwap() public {
         vm.prank(swapper);
-        exchange.ethToTokenSwap{value: 1 ether }(165);
+        exchange.ethToTokenSwap{value: 1 ether }(164);
         // Check that 1 eth was sent
         assertEq(swapper.balance, 0);
-        // Check that 166 FROG was received
-        assertEq(token.balanceOf(swapper), 250 + 166);
+        // Check that 246 FROG was received
+        assertEq(token.balanceOf(swapper), 250 + 165);
     }
 
     function testTokenSwap() public {
@@ -51,7 +51,7 @@ contract AddLiquidty is Test {
         exchange.tokenToEthSwap(250, 249);
         // Check that 250 FROG was sent
         assertEq(token.balanceOf(swapper), 0);
-        // Check that 0.666 ETH was received
-        assertEq(swapper.balance, 1e18 + 666666666666666666);
+        // Check that 0.66 ETH was received
+        assertEq(swapper.balance, 1e18 + 0.66e18);
     }
 }
