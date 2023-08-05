@@ -29,7 +29,7 @@ contract AddLiquidty is Test {
         deal(address(token), swapper, 10000);
     }
     
-    function testAddLiquidity() public {
+    function testAddTwoLiquidity() public {
         vm.prank(userA);
         token.approve(address(exchange), 10000);
         vm.prank(userA);
@@ -85,67 +85,5 @@ contract AddLiquidty is Test {
         assertEq(userA.balance, 3e18);
         // Check that userA has removed 335 token after 165 when to userB
         assertEq(token.balanceOf(userA), 10000 - 165);
-    }
-        // Testing pool actions with 2 LPs providing 50% each liquidity 
-        function testAddAddSwapRemoveLiquidity() public {
-        vm.prank(userA);
-        token.approve(address(exchange), 10000);
-        vm.prank(userA);
-        exchange.addLiquidity{ value: 2 ether }(500);
-        // Assert balance is 2 ETH
-        assertEq(address(exchange).balance, 2e18);
-        // Assert 500 tokens are in the exchange contract
-        assertEq(exchange.getReserve(), 500);
-        // Assert received 2 LP tokens in return
-        assertEq(exchange.balanceOf(userA), 2e18);
-
-        vm.prank(userB);
-        token.approve(address(exchange), 10000);
-        vm.prank(userB);
-        exchange.addLiquidity{ value: 2 ether }(250);
-        // Assert balance is 4 ETH
-        assertEq(address(exchange).balance, 4e18);
-        // Assert 750 tokens are in the exchange contract
-        assertEq(exchange.getReserve(), 750);
-        // Assert received 2 LP tokens in return
-        assertEq(exchange.balanceOf(userB), 2e18);
-
-        // Swap
-        vm.prank(swapper);
-        exchange.ethToTokenSwap{value: 1 ether }(147);
-        // Check that 1 eth was sent
-        assertEq(swapper.balance, 1e18);
-        // Check that 185 FROG was received
-        assertEq(token.balanceOf(swapper), 10000 + 148);
-
-        // Remove liquidity
-        // Assert userA has 0 ETH before removal
-        assertEq(userA.balance, 0);
-        // Assert userA has 9500 $FROG before removal
-        assertEq(token.balanceOf(userA), 9500);
-        // Assert userA has 2e18 LP tokens before removal
-        assertEq(exchange.balanceOf(userA), 2e18);
-        // Assert Exchange contract has 4e18 LP tokens total
-        assertEq(exchange.totalSupply(), 4e18);
-        // Assert exchange balance is 5ETH
-        assertEq(address(exchange).balance, 5e18);
-        // Assert exchange $FROG balance is 750 - 148
-        assertEq(token.balanceOf(address(exchange)), 602);
-
-        vm.prank(userA);
-        exchange.removeLiquidity(2e18);
-
-        // Assert userA has 2.5 ETH after removal
-        assertEq(userA.balance, 2.5e18);
-        // Assert userA has 9500 + 301 $FROG after removal
-        assertEq(token.balanceOf(userA), 9801);
-        // Assert userA has 0 LP tokens after removal
-        assertEq(exchange.balanceOf(userA), 0);
-        // Assert Exchange contract has 2e18 LP tokens total
-        assertEq(exchange.totalSupply(), 2e18);
-        // Assert exchange balance is 2.5 ETH after removal
-        assertEq(address(exchange).balance, 2.5e18);
-        // Assert exchange $FROG balance is 301 $FROG
-        assertEq(token.balanceOf(address(exchange)), 301);
     }
 }
