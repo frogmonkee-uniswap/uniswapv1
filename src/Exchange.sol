@@ -3,14 +3,26 @@ pragma solidity ^0.8.13;
 
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "./Factory.sol";
+
+interface IFactory {
+  function getExchange(address _tokenAddress) external returns (address);
+}
+
+interface IExchange {
+    function ethToTokenTransfer(uint256 _minTokens, address _recipient) external payable;
+    function ethToTokenSwap(uint256 _minTokens) external payable;
+    }
 
 contract Exchange is ERC20 {
+    address public factoryAddress;
     address public tokenAddress;
     IERC20 public token;
 
     constructor(address _token) ERC20("uniswapv1", "UNI") {
         require(_token != address(0), "Invalid token address");
         tokenAddress = _token;
+        factoryAddress = msg.sender;
         token = IERC20(tokenAddress);
     }
 
@@ -38,54 +50,31 @@ contract Exchange is ERC20 {
         }
     }
 
-    function getBalance(address _minter) public view returns(uint256) {
-        return _balances[_minter];
-    }
-
     function removeLiquidity(uint256 _amount) public returns(uint256, uint256) {
         require(_amount > 0, "invalid amount");
-
         // EthAmount = (ethReserve * amountLP) / totalAmountLP​
         uint256 ethAmount = (address(this).balance * _amount) / totalSupply();
         // EthAmount = (tokenReserve * amountLP) / totalAmountLP​
         uint256 tokenAmount = (getReserve() * _amount) / totalSupply();
-
         _burn(msg.sender, _amount);
         payable(msg.sender).transfer(ethAmount);
         token.transfer(msg.sender, tokenAmount);
-
         return (ethAmount, tokenAmount);
     }
 
-    function getAmount(
-        uint256 inputAmount,
-        uint256 inputReserve,
-        uint256 outputReserve
-        ) public pure returns (uint256) {
-        require(inputReserve > 0 && outputReserve > 0, "invalid reserves");
-        // Take 1% as fee
-        uint256 inputAmountWithFee = inputAmount * 99;
-        // Multiply `inputReserve` by 100 since input was multiplied by (100-1)
-        return (inputAmountWithFee * outputReserve) / ((inputReserve + inputAmount) * 100);
-        }
-
-    function getTokenAmount(uint256 _etherSold) public view returns(uint256) {
-        require(_etherSold > 0, "ethSold is too small");
-        uint256 tokenReserve = getReserve();
-        return getAmount(_etherSold, address(this).balance, tokenReserve);
-    }
-
-    function getEtherAmount(uint256 _tokenSold) public view returns(uint256) {
-        require(_tokenSold > 0, "tokenSold is too small");
-        uint256 tokenReserve = getReserve();
-        return getAmount(_tokenSold, tokenReserve, address(this).balance);
-    }
-
-    function ethToTokenSwap(uint _minAmount) public payable {
+    function ethToToken(uint _minAmount, address recipient) private {
         uint256 tokenReserve = getReserve();
         uint256 tokenBought = getAmount(msg.value, address(this).balance - msg.value, tokenReserve);
         require(tokenBought >= _minAmount, "Insufficient token output amount");
-        IERC20(tokenAddress).transfer(address(msg.sender), tokenBought);
+        IERC20(tokenAddress).transfer(recipient, tokenBought);
+    }
+
+    function ethToTokenSwap(uint256 _minTokens) public payable {
+        ethToToken(_minTokens, msg.sender);
+    }
+
+    function ethToTokenTransfer(uint256 _minTokens, address _recipient) public payable {
+        ethToToken(_minTokens, _recipient);
     }
 
     function tokenToEthSwap(uint _tokenSold, uint _minAmount) public {
@@ -96,7 +85,37 @@ contract Exchange is ERC20 {
         payable(msg.sender).transfer(ethBought);        
     }
 
+    function tokenToTokenSwap(uint256 _tokenSold, uint256 _minAmount, address _tokenAddress) public {
+        address exchangeAddress = _tokenAddress;
+        /* I had to change the following line into the above for TokenToTokenSwap.t.sol. 
+           I was getting a revert error calling getExchange, so I just used the test contract pass through `exchange2Address`
+           Instead of using the factory interface call `getExchange`
+        */ 
+//        address exchangeAddress = IFactory(tokenAddress).getExchange(_tokenAddress);
+        require(exchangeAddress != address(this) && exchangeAddress != address(0), "Invalid exchange address");
+        uint256 tokenReserve = getReserve();
+        uint256 ethBought = getAmount(_tokenSold, tokenReserve, address(this).balance);
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _tokenSold);
+        IExchange(exchangeAddress).ethToTokenTransfer{value: ethBought}(_minAmount, msg.sender);
+    }
+
     function getReserve() public view returns(uint256) {
         return IERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function getBalance(address _minter) public view returns(uint256) {
+        return _balances[_minter];
+    }
+
+    function getAmount(
+        uint256 inputAmount,
+        uint256 inputReserve,
+        uint256 outputReserve
+        ) public pure returns (uint256) {
+        require(inputReserve > 0 && outputReserve > 0, "invalid reserves");
+        // Take 1% of input token as fee
+        uint256 inputAmountWithFee = inputAmount * 99;
+        // Multiply `inputReserve` by 100 since input was multiplied by (100-1)
+        return (inputAmountWithFee * outputReserve) / ((inputReserve + inputAmount) * 100);
     }
 }

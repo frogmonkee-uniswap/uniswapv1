@@ -24,34 +24,32 @@ contract AddLiquidty is Test {
         deal(address(token), LP, 10000);
         swapper = makeAddr("swapper");
         vm.deal(swapper, 1 ether);
-        deal(address(token), swapper, 250);
+        deal(address(token), swapper, 500);
 
         // Provide liquidity at 2 ETH & 500 FROG
         vm.prank(LP);
         token.approve(address(exchange), 1000);
         vm.prank(LP);
-        exchange.addLiquidity{ value: 2 ether }(500);
-        assertEq(address(exchange).balance, 2e18);
-        assertEq(exchange.getReserve(), 500);
+        exchange.addLiquidity{ value: 1 ether }(1000);
+        assertEq(address(exchange).balance, 1e18);
+        assertEq(exchange.getReserve(), 1000);
     }
 
     function testEthSwap() public {
         vm.prank(swapper);
-        exchange.ethToTokenSwap{value: 1 ether }(164);
-        // Check that 1 eth was sent
-        assertEq(swapper.balance, 0);
-        // Check that 246 FROG was received
-        assertEq(token.balanceOf(swapper), 250 + 165);
+        exchange.ethToTokenSwap{value: 0.33 ether }(240);
+        // Check that 245 FROG was received
+        assertEq(token.balanceOf(swapper), 500 + 245);
     }
 
     function testTokenSwap() public {
         vm.prank(swapper);
         token.approve(address(exchange), 1000);
         vm.prank(swapper);
-        exchange.tokenToEthSwap(250, 249);
-        // Check that 250 FROG was sent
+        exchange.tokenToEthSwap(500, 245);
+        // Check that 500 FROG was sent
         assertEq(token.balanceOf(swapper), 0);
-        // Check that 0.66 ETH was received
-        assertEq(swapper.balance, 1e18 + 0.66e18);
+        // Check that 0.33 ETH was received
+        assertEq(swapper.balance, 1e18 + 0.33e18);
     }
 }
