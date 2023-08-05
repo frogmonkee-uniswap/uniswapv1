@@ -86,7 +86,7 @@ contract AddLiquidty is Test {
         // Check that userA has removed 335 token after 165 when to userB
         assertEq(token.balanceOf(userA), 10000 - 165);
     }
-
+        // Testing pool actions with 2 LPs providing 50% each liquidity 
         function testAddAddSwapRemoveLiquidity() public {
         vm.prank(userA);
         token.approve(address(exchange), 10000);
@@ -105,13 +105,12 @@ contract AddLiquidty is Test {
         exchange.addLiquidity{ value: 2 ether }(250);
         // Assert balance is 4 ETH
         assertEq(address(exchange).balance, 4e18);
-        // Assert 500 tokens are in the exchange contract
+        // Assert 750 tokens are in the exchange contract
         assertEq(exchange.getReserve(), 750);
         // Assert received 2 LP tokens in return
         assertEq(exchange.balanceOf(userB), 2e18);
 
         // Swap
-//        console.log("FROG output: ", exchange.getAmount(1e18, 4e18, 750));
         vm.prank(swapper);
         exchange.ethToTokenSwap{value: 1 ether }(147);
         // Check that 1 eth was sent

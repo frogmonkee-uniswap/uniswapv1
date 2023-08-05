@@ -32,7 +32,7 @@ contract Exchange is ERC20 {
             // Transfers exact tokenAmount and leaves _tokenAmount - tokenAmount in the user's wallet
             token.transferFrom(msg.sender, address(this), tokenAmount);
             // amountMinted = totalAmount * (ethReserve / ethDeposited​)
-            uint256 liquidity = totalSupply() * (msg.value / ethReserve);
+            uint256 liquidity = (totalSupply() * msg.value ) / ethReserve;
             _mint(msg.sender, liquidity);
             return liquidity;
         }
